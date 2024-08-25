@@ -1,0 +1,8 @@
+-- Crear la base de datos y tabla
+CREATE DATABASE tesis;
+USE tesis;
+CREATE TABLE datos_oxi (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    sangre INT NOT NULL
+);
