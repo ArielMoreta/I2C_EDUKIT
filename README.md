@@ -72,4 +72,5 @@ Este proyecto utiliza un ESP32 para capturar datos de un sensor MAX30102 y visua
 4. **Configurar Grafana**:
    - Instala y configura Grafana para conectar con tu base de datos y visualizar los datos en tiempo real.
 
-¡Listo! Ahora deberías tener todo configurado para tu proyecto. Si necesitas ayuda adicional, no dudes en preguntar.
+## Ariel Moreta
+## Adrian Vera
