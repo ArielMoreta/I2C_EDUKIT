@@ -45,9 +45,17 @@ Este proyecto tiene como objetivo capturar datos de un sensor MAX30105 con un ES
    - Descripción: Paquete de software que incluye Apache, MySQL, y PHP para el desarrollo local de aplicaciones web.
    - [Descargar XAMPP](https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download)
 
-2. **Arduino IDE**:
-   - Descripción: Entorno de desarrollo para programar y cargar código en el ESP32.
+2. **Composer**:
+   - Descripción: Herramienta para la gestión de dependencias en PHP.
+   - [Descargar Composer](https://getcomposer.org/Composer-Setup.exe)
+
+3. **Arduino IDE**:
+   - Descripción: Entorno de desarrollo para programar el ESP32.
    - [Descargar Arduino IDE](https://www.arduino.cc/en/software)
+
+4. **Grafana**:
+   - Descripción: Plataforma para la visualización y análisis de datos en tiempo real.
+   - [Descargar Grafana](https://grafana.com/grafana/download?pg=get&plcmt=selfmanaged-box1-cta1)
 
 ## Instrucciones de Configuración
 
@@ -62,7 +70,14 @@ Este proyecto tiene como objetivo capturar datos de un sensor MAX30105 con un ES
 3. **Configurar la Base de Datos**:
    - Utiliza phpMyAdmin o una herramienta similar para importar el archivo `base_de_datos.sql` y crear la base de datos `tesis` con la tabla `datos_oxi`.
 
-4. **Probar la Conexión**:
+4. **Instalar Dependencias con Composer**:
+   - Ejecuta `composer install` en la carpeta del proyecto para instalar las dependencias necesarias.
+
+5. **Configurar Grafana**:
+   - Instala Grafana y configura la fuente de datos para conectarla a la base de datos MySQL.
+   - Crea dashboards para visualizar los datos capturados en tiempo real.
+
+6. **Probar la Conexión**:
    - Asegúrate de que el ESP32 esté conectado a la red WiFi configurada.
    - Verifica que los datos se envíen correctamente al servidor y se almacenen en la base de datos.
 
@@ -72,7 +87,7 @@ Este proyecto tiene como objetivo capturar datos de un sensor MAX30105 con un ES
 2. Los datos se visualizan en la pantalla OLED en tiempo real.
 3. Si el ESP32 está conectado a WiFi, los datos se envían al servidor.
 4. El servidor recibe los datos a través de `post.php` y los almacena en la base de datos MySQL.
-5. Los datos pueden ser accedidos posteriormente para su análisis o visualización.
+5. Los datos pueden ser accedidos posteriormente para su análisis o visualización en Grafana.
 
 ---
 
