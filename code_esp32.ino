@@ -1,35 +1,39 @@
 //descarga las librerias mencionadas
 #include <Wire.h>
+#include <MAX30105.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include "MAX30105.h"
 
-#define SCREEN_WIDTH 128 
+#define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET    -1 
-#define MODE_BUTTON_PIN 14  // Botón para activar/desactivar WiFi
-
-const char* ssid = "---------"; //escribe el nombre del internet al que se pueda conectar la ESP32
-const char* password = "-------"; //escribe la contraseña de la red conectada
+#define OLED_RESET -1
+#define OLED_I2C_ADDRESS 0x3C 
+#define MODE_BUTTON_PIN 14  
+//conectate a internet
+const char* ssid = "---------";
+const char* password = "-----------";
 
 Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 MAX30105 particleSensor;
 
-unsigned long anteriorMillis = 0;
-int irValue = 0;
-float graficaIR = 0;
+// Tamaño de la gráfica
+#define GRAPH_WIDTH (SCREEN_WIDTH / 2 - 2)
+#define GRAPH_HEIGHT (SCREEN_HEIGHT - 2)
+#define DATA_POINTS 64  // Número de puntos en la gráfica
 
-int x[128]; 
-int y[128];
+int irData[DATA_POINTS];
+int dataIndex = 0;
 bool useWiFi = false;  // Variable para controlar el uso de WiFi
 int modeButtonState = 0;
 int lastModeButtonState = 0;
-unsigned long lastDebounceTime = 0; 
-unsigned long debounceDelay = 50; 
-unsigned long buttonPressTime = 0; 
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;
+unsigned long buttonPressTime = 0;
 unsigned long longPressDuration = 1000;
+unsigned long anteriorMillis = 0;
 
 void setupWiFi() {
   WiFi.mode(WIFI_STA);
@@ -47,7 +51,7 @@ void setupWiFi() {
       delay(1000);
       ESP.restart();
     }
-    delay(100); 
+    delay(100);
   }
 
   Serial.println();
@@ -57,13 +61,15 @@ void setupWiFi() {
   delay(2000);
 }
 
-void setup() {                
+void setup() {
   Serial.begin(115200);
-  pinMode(MODE_BUTTON_PIN, INPUT_PULLDOWN); 
-  delay(100);  
+  pinMode(MODE_BUTTON_PIN, INPUT_PULLDOWN);
+  delay(100);
+
+ 
   if (!display.begin(0x3C, OLED_RESET)) { 
     Serial.println(F("Fallo al inicializar la pantalla SH1106"));
-    for(;;); 
+    while (1); 
   }
 
   display.clearDisplay();
@@ -74,27 +80,21 @@ void setup() {
   display.display();
   delay(2000);
 
-  if (!particleSensor.begin()) { 
-    Serial.println("MAX30102 no encontrado. Por favor, revisa la conexión y la alimentación.");
+  if (!particleSensor.begin()) {
+    Serial.println("No se encontró el sensor MAX30102. Asegúrate de que esté conectado.");
     while (1);
   }
-  
-  byte ledBrightness = 0x1F; // Opciones: 0=Apagado a 255=50mA
-  byte sampleAverage = 8; // Opciones: 1, 2, 4, 8, 16, 32
-  byte ledMode = 3; // Opciones: 1 = Solo rojo, 2 = Rojo + IR, 3 = Rojo + IR + Verde
-  int sampleRate = 100; // Opciones: 50, 100, 200, 400, 800, 1000, 1600, 3200
-  int pulseWidth = 411; // Opciones: 69, 118, 215, 411
-  int adcRange = 4096; // Opciones: 2048, 4096, 8192, 16384
-  particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange); 
 
-  for(int i = 127; i >= 0; i--) {
-    x[i] = 9999;
-    y[i] = 9999;
+  particleSensor.setup();  // Configuración básica del sensor
+  particleSensor.setPulseAmplitudeRed(0x0A);  // Ajusta la amplitud de la señal roja
+  particleSensor.setPulseAmplitudeIR(0x0A);   // Ajusta la amplitud de la señal IR
+
+  for (int i = 0; i < DATA_POINTS; i++) {
+    irData[i] = 0;
   }
 
-
+  // Verifica el estado inicial del botón
   int initialModeButtonState = digitalRead(MODE_BUTTON_PIN);
-
   if (initialModeButtonState == HIGH) {
     useWiFi = true;
     display.clearDisplay();
@@ -150,63 +150,68 @@ void loop() {
 
   lastModeButtonState = modeReading;
 
-  display.clearDisplay(); 
+  long irValue = particleSensor.getIR();  // Lee el valor IR
+  long redValue = particleSensor.getRed();  // Lee el valor de la luz roja
 
-  irValue = particleSensor.getIR();
-    
-  if (irValue < 1000) {
-    display.clearDisplay();
-    display.setCursor(0, 20);
-    display.print("Coloque el dedo");
-    display.setCursor(0, 30);
-    display.print("en el sensor");
-    display.setCursor(0, 40);
-    display.print("MAX30105");
-  } else {
-    graficaIR = map(irValue, 80000, 100000, 53, 0); 
-
-    x[127] = graficaIR; 
-
-    for(int i = 127; i > 0; i--) { 
-      display.drawPixel(i, x[i], SH110X_WHITE); 
-      y[i-1] = x[i]; 
-    }
-
-    Serial.print("IR: ");
-    Serial.println(irValue);
-
-    if (useWiFi && WiFi.status() == WL_CONNECTED) {
-      HTTPClient http;
-      String postData = "id=esp32_01&sangre=" + String(irValue); 
-
-      Serial.print("postData : ");
-      Serial.println(postData);
-
-      http.begin("http://0.0.0.0/prueba/test/post.php"); // escribir direccion IP de tu computador, la ruta y el nombre del archivo para el envio de datos el archivo se colocará en el siguiente archivo
-      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-      int httpCode = http.POST(postData);
-      String payload = http.getString();
-
-      Serial.print("httpCode : ");
-      Serial.println(httpCode);
-      Serial.print("Response Payload: ");
-      Serial.println(payload);
-
-      http.end();
-    }
-    
-    unsigned long tiempo = millis() - anteriorMillis;
-    display.setCursor(25, 57); 
-    display.print(tiempo);
-    anteriorMillis = millis();
-    display.print(F(" ms"));
+  // Mueve los datos hacia la izquierda
+  for (int i = 1; i < DATA_POINTS; i++) {
+    irData[i - 1] = irData[i];
   }
 
-  display.display(); 
-  for(int i = 127; i >= 0; i--) {
-    x[i] = y[i]; 
+  // Añade el nuevo dato al final
+  irData[DATA_POINTS - 1] = map(irValue, 0, 100000, 0, GRAPH_HEIGHT); 
+
+  // Envia los datos al Serial Plotter
+  Serial.print("IR:");
+  Serial.print(irValue);
+  Serial.print(",");
+  Serial.print("Red:");
+  Serial.println(redValue);
+
+  // Muestra los datos en la pantalla OLED
+  display.clearDisplay();  // Limpia la pantalla
+
+  // Dibuja la gráfica IR en la mitad izquierda de la pantalla
+  for (int i = 1; i < DATA_POINTS; i++) {
+    display.drawLine(i - 1, SCREEN_HEIGHT - irData[i - 1] - 1, i, SCREEN_HEIGHT - irData[i] - 1, SH110X_WHITE);
+  }
+  display.setCursor(GRAPH_WIDTH + 2, 0);
+  display.setTextSize(1);
+  display.setTextColor(SH110X_WHITE);
+  display.print(F("IR: "));
+  display.println(irValue);
+  display.print(F("Red: "));
+  display.println(redValue);
+
+  display.display();  //
+
+  // Solo enviar datos si los valores IR y Red son mayores o iguales a 1000
+  if (useWiFi && WiFi.status() == WL_CONNECTED && irValue >= 1000 && redValue >= 1000) {
+    HTTPClient http;
+    String postData = "id=esp32_01&ir=" + String(irValue) + "&red=" + String(redValue);
+
+    Serial.print("postData : ");
+    Serial.println(postData);
+
+    http.begin("http://192.168.0.0/prueba/test/post.php");  // Cambia la URL según tu servidor
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    int httpCode = http.POST(postData);
+    String payload = http.getString();
+
+    Serial.print("httpCode : ");
+    Serial.println(httpCode);
+    Serial.print("Response Payload: ");
+    Serial.println(payload);
+
+    http.end();
   }
 
-  delay(10);
+  unsigned long tiempo = millis() - anteriorMillis;
+  display.setCursor(25, 57);
+  display.print(tiempo);
+  anteriorMillis = millis();
+  display.print(F(" ms"));
+
+  delay(10);  //
 }
