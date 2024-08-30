@@ -13,9 +13,9 @@ Este proyecto tiene como objetivo capturar datos de un sensor MAX30105 con un ES
 
 ## Archivos del Proyecto
 
-1. **`database.php`**:
-   - Ubicación: Carpeta de XAMPP
-   - Descripción: Archivo PHP que maneja la conexión a la base de datos MySQL utilizando PDO para asegurar una comunicación segura y eficiente.
+1. **`code_esp32.ino`**:
+   - Cargar a la ESP32
+   - Descripción: Configura a la ESP32 como cliente para el envio de datos.
 
 2. **`post.php`**:
    - Ubicación: Carpeta de XAMPP
