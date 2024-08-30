@@ -1,8 +1,13 @@
--- Crear la base de datos y tabla
-CREATE DATABASE tesis;
+-- Crear la base de datos
+CREATE DATABASE IF NOT EXISTS tesis;
+
+-- Seleccionar la base de datos
 USE tesis;
-CREATE TABLE datos_oxi (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    sangre INT NOT NULL
+
+-- Crear la tabla datos_oxi
+CREATE TABLE IF NOT EXISTS datos_oxi (
+    id INT AUTO_INCREMENT PRIMARY KEY,  -- Identificador único para cada entrada
+    ir INT NOT NULL,                    -- Columna para el valor IR
+    red INT NOT NULL,                   -- Columna para el valor Red
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Fecha y hora de la inserción
 );
