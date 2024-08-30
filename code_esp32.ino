@@ -185,8 +185,8 @@ void loop() {
 
   display.display();  //
 
-  // Solo enviar datos si los valores IR y Red son mayores o iguales a 1000
-  if (useWiFi && WiFi.status() == WL_CONNECTED && irValue >= 1000 && redValue >= 1000) {
+  // Solo enviar datos si los valores IR y Red son mayores o iguales a 2000
+  if (useWiFi && WiFi.status() == WL_CONNECTED && irValue >= 2000 && redValue >= 2000) {
     HTTPClient http;
     String postData = "id=esp32_01&ir=" + String(irValue) + "&red=" + String(redValue);
 
