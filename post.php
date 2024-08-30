@@ -31,27 +31,28 @@ class Database {
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!empty($_POST['sangre'])) {
-        $sangre = $_POST['sangre'];
+    if (!empty($_POST['ir']) && !empty($_POST['red'])) {
+        $ir = $_POST['ir'];
+        $red = $_POST['red'];
         
         // Validación adicional
-        if (!filter_var($sangre, FILTER_VALIDATE_INT)) {
-            echo json_encode(['status' => 'error', 'message' => 'El dato "sangre" debe ser un número entero válido.']);
+        if (!filter_var($ir, FILTER_VALIDATE_INT) || !filter_var($red, FILTER_VALIDATE_INT)) {
+            echo json_encode(['status' => 'error', 'message' => 'Los datos "ir" y "red" deben ser números enteros válidos.']);
             exit;
         }
 
         $pdo = Database::connect();
         try {
-            $sql = "INSERT INTO datos_oxi (sangre) VALUES (?)";
+            $sql = "INSERT INTO datos_oxi (ir, red) VALUES (?, ?)";
             $q = $pdo->prepare($sql);
-            $q->execute([$sangre]);
+            $q->execute([$ir, $red]);
 
             $lastId = $pdo->lastInsertId();
 
             Database::disconnect();
-            echo json_encode(['status' => 'success', 'message' => 'Dato insertado correctamente.', 'id' => $lastId]);
+            echo json_encode(['status' => 'success', 'message' => 'Datos insertados correctamente.', 'id' => $lastId]);
         } catch (PDOException $e) {
-            echo json_encode(['status' => 'error', 'message' => 'Error al insertar el dato: ' . $e->getMessage()]);
+            echo json_encode(['status' => 'error', 'message' => 'Error al insertar los datos: ' . $e->getMessage()]);
         }
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Los datos POST están incompletos o vacíos.']);
